@@ -8,7 +8,7 @@
     <div class="row">
       <div class="col-12">
         <div v-show="step == 1">
-          <h2>Upload Your UDisc CSV</h2>
+          <h2>Upload UDisc CSV</h2>
           <p>
             You can find this in the UDisc app by going to
             <strong>More</strong> and then
@@ -22,21 +22,24 @@
           </label>
         </div>
         <div v-show="step == 2">
-          <h2>Select Your Time Scale</h2>
+          <h2>Select Granularity</h2>
           <button class="btn btn-primary" v-on:click="onSelectReportType('by-year')">Yearly</button>
           <button class="btn btn-primary" v-on:click="onSelectReportType('by-month')">Monthly</button>
         </div>
         <div v-show="step == 3">
-          <h2>Choose Your Player Name</h2>
+          <h2>Select Players</h2>
           <button
-            class="btn btn-primary"
+            v-bind:class="['btn', playerNames.some(x => x == player.playerName) ? 'btn-primary' : 'btn-outline-primary']"
             v-on:click="onSelectPlayerName(player.playerName)"
             v-for="player in scores.players"
             v-bind:key="player.playerName"
           >{{ player.playerName }} ({{player.totalRounds}} rounds)</button>
+          <div v-if="playerNames && playerNames.length > 0">
+            <button class="btn btn-success" v-on:click="onSelectPlayerNameDone()">Next</button>
+          </div>
         </div>
         <div v-show="step == 4">
-          <h2>Choose Your Course</h2>
+          <h2>Select Course</h2>
           <button class="btn btn-success" v-on:click="onSelectCourseName('')">All Courses</button>
           <button
             class="btn btn-primary"
@@ -46,8 +49,8 @@
           >{{ course.courseName }} ({{course.totalRounds}} rounds)</button>
         </div>
         <div v-show="step == 5">
-          <h2>Your Results</h2>
-          <canvas id="boxPlotCanvas"></canvas>
+          <h2>Results</h2>
+          <div id="boxPlot"></div>
         </div>
       </div>
     </div>
@@ -67,7 +70,7 @@ export default {
       step: 1,
       error: "",
       reportType: "",
-      playerName: "",
+      playerNames: [],
       allPlayerCourses: []
     };
   },
@@ -101,9 +104,15 @@ export default {
       this.step = 3;
     },
     onSelectPlayerName: function(playerName) {
-      this.playerName = playerName;
+      if (this.playerNames.some(x => x == playerName)) {
+        this.playerNames = this.playerNames.filter(x => x != playerName);
+      } else {
+        this.playerNames.push(playerName);
+      }
+    },
+    onSelectPlayerNameDone: function() {
       this.allPlayerCourses = this.scores.players
-        .find(x => x.playerName == playerName)
+        .find(x => this.playerNames.some(y => y == x.playerName))
         .courses.map(x => {
           return {
             courseName: x.courseName,
@@ -119,9 +128,9 @@ export default {
       this.courseName = course;
       this.step = 5;
       this.updateBoxPlot(
-        "boxPlotCanvas",
+        "boxPlot",
         this.scores.players,
-        this.playerName,
+        this.playerNames,
         this.courseName,
         this.reportType
       );
