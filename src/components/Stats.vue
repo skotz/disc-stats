@@ -37,6 +37,7 @@
         </div>
         <div v-show="step == 4">
           <h2>Choose Your Course</h2>
+          <button class="btn btn-success" v-on:click="onSelectCourseName('')">All Courses</button>
           <button
             class="btn btn-primary"
             v-on:click="onSelectCourseName(course.courseName)"

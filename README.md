@@ -1,29 +1,5 @@
-# disc-stats
+# Disc Golf Stats
+Parse CSV files exported from UDisc to see trends in your disc golf scores!
 
-## Project setup
-```
-npm install
-```
+https://skotz.github.io/disc-stats/
 
-### Compiles and hot-reloads for development
-```
-npm run serve
-```
-
-### Compiles and minifies for production
-```
-npm run build
-```
-
-### Run your tests
-```
-npm run test
-```
-
-### Lints and fixes files
-```
-npm run lint
-```
-
-### Customize configuration
-See [Configuration Reference](https://cli.vuejs.org/config/).
