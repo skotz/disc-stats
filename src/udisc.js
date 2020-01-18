@@ -18,6 +18,8 @@ export const UDisc = {
             var allData = parser(data).data;
             var scores = [];
             var duplicates = 0;
+            var distinctCourses = [];
+            var overallRounds = 0;
 
             // Parse score data for every player
             if (allData && allData.length) {
@@ -31,6 +33,11 @@ export const UDisc = {
                     // Verify that this is a valid UDisc record
                     if (!playerName || !courseName || !scoreDate || !scoreTotal || !scoreOverUnder) {
                         continue;
+                    }
+
+                    var distinctCourseIndex = distinctCourses.findIndex(x => x == courseName);
+                    if (distinctCourseIndex < 0) {
+                        distinctCourses.push(courseName);
                     }
 
                     // Par for a course in UDisc is stored as a pseudo-player named "Par" on every card
@@ -73,6 +80,7 @@ export const UDisc = {
                             };
                             scores[playerIndex].courses[courseIndex].scores.push(score);
                             scores[playerIndex].totalRounds++;
+                            overallRounds++;
                         } else {
                             // UDisk allows other players to link scores to your profile even if you're recording the same game yourself, so duplicates happen
                             duplicates++;
@@ -81,9 +89,15 @@ export const UDisc = {
                 }
             }
 
+            if (scores && scores.length > 0) {
+                scores.sort((a, b) => a.totalRounds > b.totalRounds ? -1 : 1);
+            }
+
             return {
                 players: scores,
-                duplicates: duplicates
+                duplicates: duplicates,
+                courseCount: distinctCourses.length,
+                roundsCount: overallRounds
             };
         }
     }
