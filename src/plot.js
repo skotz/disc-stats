@@ -17,8 +17,8 @@ export const Plot = {
         }
     },
     methods: {
-        updateBoxPlot: function (boxPlotDiv, scores, playerNames, courseName, timeSpan) {
-            this.updateBoxPlotData(scores, playerNames, courseName, timeSpan);
+        updateBoxPlot: function (boxPlotDiv, scores, playerNames, courseName, timeSpan, startDate, endDate) {
+            this.updateBoxPlotData(scores, playerNames, courseName, timeSpan, startDate, endDate);
             var old = document.getElementById(boxPlotDiv + "Canvas");
             if (old) {
                 old.remove();
@@ -42,24 +42,25 @@ export const Plot = {
                 }
             });
         },
-        updateBoxPlotData: function (scores, playerNames, courseName, timeSpan) {
-            let labels = [];
-            let datasets = [];
-            let nextColor = 0;
-
+        getLabels: function (scores, playerNames, courseName, timeSpan, minDate = null, maxDate = null) {
             // Generate all the labels
-            let minDate = null;
-            let maxDate = null;
-            for (let p = 0; p < playerNames.length; p++) {
-                let playerData = scores.find(x => x.playerName == playerNames[p]);
-                for (let c = 0; c < playerData.courses.length; c++) {
-                    if (courseName == "" || playerData.courses[c].courseName == courseName) {
-                        for (let s = 0; s < playerData.courses[c].scores.length; s++) {
-                            if (minDate == null || playerData.courses[c].scores[s].date < minDate) {
-                                minDate = playerData.courses[c].scores[s].date;
-                            }
-                            if (maxDate == null || playerData.courses[c].scores[s].date > maxDate) {
-                                maxDate = playerData.courses[c].scores[s].date;
+            let labels = [];
+            let dates = [];
+            let full = [];
+            let ends = [];
+            let agg = [];
+            if (minDate == null || maxDate == null) {
+                for (let p = 0; p < playerNames.length; p++) {
+                    let playerData = scores.find(x => x.playerName == playerNames[p]);
+                    for (let c = 0; c < playerData.courses.length; c++) {
+                        if (courseName == "" || playerData.courses[c].courseName == courseName) {
+                            for (let s = 0; s < playerData.courses[c].scores.length; s++) {
+                                if (minDate == null || playerData.courses[c].scores[s].date < minDate) {
+                                    minDate = playerData.courses[c].scores[s].date;
+                                }
+                                if (maxDate == null || playerData.courses[c].scores[s].date > maxDate) {
+                                    maxDate = playerData.courses[c].scores[s].date;
+                                }
                             }
                         }
                     }
@@ -69,18 +70,58 @@ export const Plot = {
             maxDate = new Date(maxDate.getFullYear(), maxDate.getMonth(), maxDate.getDate());
             for (var d = new Date(minDate); d <= maxDate; d.setDate(d.getDate() + 1)) {
                 let text = "";
+                let endOfRange = "";
+                let date = new Date(d);
+                let endOfRangeDate = new Date(d);
+                let showRange = false;
                 if (timeSpan == "by-year") {
                     text = d.getFullYear().toString();
+                    date = new Date(d.getFullYear(), 1, 1);
+                    endOfRangeDate = new Date(date.setFullYear(date.getFullYear() + 1));
+                    endOfRangeDate.setDate(endOfRangeDate.getDate() - 1);
+                    endOfRange = (endOfRangeDate.getMonth() + 1).toString() + "/" + endOfRangeDate.getDate().toString() + "/" + endOfRangeDate.getFullYear().toString();
                 } else if (timeSpan == "by-month") {
                     text = (d.getMonth() + 1).toString() + "/" + d.getFullYear().toString();
+                    date = new Date(d.getFullYear(), d.getMonth(), 1);
+                    endOfRangeDate = new Date(date.setMonth(date.getMonth() + 1));
+                    endOfRangeDate.setDate(endOfRangeDate.getDate() - 1);
+                    endOfRange = (endOfRangeDate.getMonth() + 1).toString() + "/" + endOfRangeDate.getDate().toString() + "/" + endOfRangeDate.getFullYear().toString();
                 } else if (timeSpan == "by-week") {
                     let sun = this.getLastSunday(d);
                     text = (sun.getMonth() + 1).toString() + "/" + sun.getDate().toString() + "/" + sun.getFullYear().toString();
+                    date = new Date(sun.getFullYear(), sun.getMonth(), sun.getDate());
+                    endOfRangeDate = new Date(date);
+                    endOfRangeDate.setDate(endOfRangeDate.getDate() + 6);
+                    endOfRange = (endOfRangeDate.getMonth() + 1).toString() + "/" + endOfRangeDate.getDate().toString() + "/" + endOfRangeDate.getFullYear().toString();
+                    showRange = true;
                 }
                 if (labels.indexOf(text) == -1) {
                     labels.push(text);
+                    dates.push(date);
+                    ends.push(endOfRangeDate);
+                    full.push(text + (endOfRange ? " - " + endOfRange : ""));
+                    agg.push({
+                        label: text,
+                        start: date,
+                        end: endOfRangeDate,
+                        full: text + (showRange ? " - " + endOfRange : "")
+                    });
                 }
             }
+            return {
+                labels: labels,
+                dates: dates,
+                full: full,
+                min: minDate,
+                max: maxDate,
+                all: agg
+            };
+        },
+        updateBoxPlotData: function (scores, playerNames, courseName, timeSpan, startDate, endDate) {
+            let datasets = [];
+            let nextColor = 0;
+
+            let labels = this.getLabels(scores, playerNames, courseName, timeSpan, startDate, endDate).labels;
 
             // Generate all the data sets
             for (let p = 0; p < playerNames.length; p++) {
@@ -123,7 +164,9 @@ export const Plot = {
                 rawData.sort((a, b) => a.date > b.date ? 1 : -1);
                 for (let i = 0; i < rawData.length; i++) {
                     let index = labels.indexOf(rawData[i].label);
-                    data[index].push(+rawData[i].score);
+                    if (index >= 0) {
+                        data[index].push(+rawData[i].score);
+                    }
                 }
 
                 let color = GraphColors[nextColor++ % GraphColors.length];

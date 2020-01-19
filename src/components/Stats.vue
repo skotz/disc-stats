@@ -113,6 +113,19 @@
           </div>
         </div>
         <div v-show="step == 5">
+          <h2>Select Dates</h2>
+          <div class="row row--players" v-if="labels">
+            <div class="col-sm-4" v-for="label in labels.all" v-bind:key="label.label">
+              <button
+                v-bind:class="['btn', false ? 'btn-primary' : 'btn-outline-primary']"
+                v-on:click="onSelectPlayerName(label.start, label.end)"
+              >{{label.full}}
+              </button>
+            </div>
+          </div>
+          <button class="btn btn-success" v-on:click="onSelectDateRange()">Next</button>
+        </div>
+        <div v-show="step == 6">
           <h2>Results</h2>
           <div id="boxPlot"></div>
         </div>
@@ -145,7 +158,10 @@ export default {
       allPlayerCourses: [],
       graphsGenerated: 0,
       duplicates: 0,
-      exampleImage: process.env.BASE_URL + "example.png"
+      exampleImage: process.env.BASE_URL + "example.png",
+      labels: null,
+      fromDate: null,
+      toDate: null
     };
   },
   computed: {
@@ -231,12 +247,29 @@ export default {
         "event-select-course",
         this.courseName ? this.courseName : "all"
       );
+      this.labels = this.getLabels(
+        this.scores.players,
+        this.playerNames,
+        this.courseName,
+        this.reportType
+      );
+    },
+    onSelectDateRange: function() {
+      this.step = 6;
+      this.fireEvent(
+        "event-select-dates",
+        this.fromDate.toLocaleDateString() +
+          " - " +
+          this.toDate.toLocaleDateString()
+      );
       this.updateBoxPlot(
         "boxPlot",
         this.scores.players,
         this.playerNames,
         this.courseName,
-        this.reportType
+        this.reportType,
+        this.fromDate,
+        this.toDate
       );
       this.graphsGenerated++;
       this.fireEvent("event-view-graph", this.graphsGenerated);
@@ -246,6 +279,17 @@ export default {
         "event-label": info,
         event: event
       });
+    },
+    prettify: function(ts) {
+      return new Date(ts).toLocaleDateString("en", {
+        year: "numeric",
+        month: "short",
+        day: "numeric"
+      });
+    },
+    updateLabels: function(update) {
+      this.fromDate = new Date(update.from);
+      this.toDate = new Date(update.to);
     }
   },
   mounted: function() {
