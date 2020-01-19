@@ -76,16 +76,19 @@ export const Plot = {
                 let showRange = false;
                 if (timeSpan == "by-year") {
                     text = d.getFullYear().toString();
-                    date = new Date(d.getFullYear(), 1, 1);
-                    endOfRangeDate = new Date(date.setFullYear(date.getFullYear() + 1));
+                    date = new Date(d.getFullYear(), 0, 1);
+                    endOfRangeDate = new Date(date);
+                    endOfRangeDate = new Date(endOfRangeDate.setFullYear(endOfRangeDate.getFullYear() + 1));
                     endOfRangeDate.setDate(endOfRangeDate.getDate() - 1);
                     endOfRange = (endOfRangeDate.getMonth() + 1).toString() + "/" + endOfRangeDate.getDate().toString() + "/" + endOfRangeDate.getFullYear().toString();
                 } else if (timeSpan == "by-month") {
                     text = (d.getMonth() + 1).toString() + "/" + d.getFullYear().toString();
                     date = new Date(d.getFullYear(), d.getMonth(), 1);
-                    endOfRangeDate = new Date(date.setMonth(date.getMonth() + 1));
+                    endOfRangeDate = new Date(date);
+                    endOfRangeDate = new Date(endOfRangeDate.setMonth(endOfRangeDate.getMonth() + 1));
                     endOfRangeDate.setDate(endOfRangeDate.getDate() - 1);
                     endOfRange = (endOfRangeDate.getMonth() + 1).toString() + "/" + endOfRangeDate.getDate().toString() + "/" + endOfRangeDate.getFullYear().toString();
+                    // TODO: leap day?
                 } else if (timeSpan == "by-week") {
                     let sun = this.getLastSunday(d);
                     text = (sun.getMonth() + 1).toString() + "/" + sun.getDate().toString() + "/" + sun.getFullYear().toString();

@@ -50,7 +50,7 @@
           <div class="row">
             <div class="col-md-8">
               <h2>Select Granularity</h2>
-              <p>Would you like to aggregate scores by year, month, or week?</p>
+              <p>Choose whether to aggregate scores by years, months, or weeks.</p>
               <button
                 class="btn btn-primary btn-spacing"
                 v-on:click="onSelectReportType('by-year')"
@@ -114,15 +114,9 @@
         </div>
         <div v-show="step == 5">
           <h2>Select Dates</h2>
-          <div class="row row--players" v-if="labels">
-            <div class="col-sm-4" v-for="label in labels.all" v-bind:key="label.label">
-              <button
-                v-bind:class="['btn', false ? 'btn-primary' : 'btn-outline-primary']"
-                v-on:click="onSelectPlayerName(label.start, label.end)"
-              >{{label.full}}
-              </button>
-            </div>
-          </div>
+          <p>Choose a range of dates to include in the results.</p>
+          <VueSlider v-if="labels && labels.full" v-model="dateSliderValue" :data="labels.labels" />
+          <p v-html="dateSliderRangeText"></p>
           <button class="btn btn-success" v-on:click="onSelectDateRange()">Next</button>
         </div>
         <div v-show="step == 6">
@@ -144,6 +138,8 @@
 <script>
 import { UDisc } from "./../udisc.js";
 import { Plot } from "./../plot.js";
+import VueSlider from "vue-slider-component";
+import "vue-slider-component/theme/default.css";
 
 export default {
   name: "Stats",
@@ -160,8 +156,7 @@ export default {
       duplicates: 0,
       exampleImage: process.env.BASE_URL + "example.png",
       labels: null,
-      fromDate: null,
-      toDate: null
+      dateSliderValue: []
     };
   },
   computed: {
@@ -175,6 +170,42 @@ export default {
     },
     totalRounds: function() {
       return this.scores ? this.scores.roundsCount : 0;
+    },
+    dateSliderRange: function() {
+      if (this.dateSliderValue && this.dateSliderValue.length == 2) {
+        let first = this.labels.all.find(
+          x => x.label == this.dateSliderValue[0]
+        );
+        let second = this.labels.all.find(
+          x => x.label == this.dateSliderValue[1]
+        );
+
+        if (first.date > second.date) {
+          return [second, first];
+        } else if (first.label == second.label) {
+          return [first];
+        } else {
+          return [first, second];
+        }
+      }
+      return [];
+    },
+    dateSliderRangeText: function() {
+      if (this.dateSliderRange.length == 1) {
+        return (
+          this.dateSliderRange[0].start.toLocaleDateString() +
+          "&ndash;" +
+          this.dateSliderRange[0].end.toLocaleDateString()
+        );
+      } else if (this.dateSliderRange.length == 2) {
+        return (
+          this.dateSliderRange[0].start.toLocaleDateString() +
+          "&ndash;" +
+          this.dateSliderRange[1].end.toLocaleDateString()
+        );
+      } else {
+        return "";
+      }
     }
   },
   methods: {
@@ -253,14 +284,20 @@ export default {
         this.courseName,
         this.reportType
       );
+      this.dateSliderValue = [
+        this.labels.labels[0],
+        this.labels.labels[this.labels.labels.length - 1]
+      ];
     },
     onSelectDateRange: function() {
       this.step = 6;
       this.fireEvent(
         "event-select-dates",
-        this.fromDate.toLocaleDateString() +
+        this.dateSliderRange[0].start.toLocaleDateString() +
           " - " +
-          this.toDate.toLocaleDateString()
+          this.dateSliderRange[
+            this.dateSliderRange.length - 1
+          ].end.toLocaleDateString()
       );
       this.updateBoxPlot(
         "boxPlot",
@@ -268,8 +305,8 @@ export default {
         this.playerNames,
         this.courseName,
         this.reportType,
-        this.fromDate,
-        this.toDate
+        this.dateSliderRange[0].start,
+        this.dateSliderRange[this.dateSliderRange.length - 1].end
       );
       this.graphsGenerated++;
       this.fireEvent("event-view-graph", this.graphsGenerated);
@@ -286,16 +323,15 @@ export default {
         month: "short",
         day: "numeric"
       });
-    },
-    updateLabels: function(update) {
-      this.fromDate = new Date(update.from);
-      this.toDate = new Date(update.to);
     }
   },
   mounted: function() {
     this.fireEvent("event-app-load", "");
   },
-  mixins: [UDisc, Plot]
+  mixins: [UDisc, Plot],
+  components: {
+    VueSlider: VueSlider
+  }
 };
 </script>
 
