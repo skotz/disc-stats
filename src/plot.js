@@ -65,12 +65,17 @@ export const Plot = {
                     }
                 }
             }
+            minDate = new Date(minDate.getFullYear(), minDate.getMonth(), minDate.getDate());
+            maxDate = new Date(maxDate.getFullYear(), maxDate.getMonth(), maxDate.getDate());
             for (var d = new Date(minDate); d <= maxDate; d.setDate(d.getDate() + 1)) {
                 let text = "";
                 if (timeSpan == "by-year") {
                     text = d.getFullYear().toString();
                 } else if (timeSpan == "by-month") {
                     text = (d.getMonth() + 1).toString() + "/" + d.getFullYear().toString();
+                } else if (timeSpan == "by-week") {
+                    let sun = this.getLastSunday(d);
+                    text = (sun.getMonth() + 1).toString() + "/" + sun.getDate().toString() + "/" + sun.getFullYear().toString();
                 }
                 if (labels.indexOf(text) == -1) {
                     labels.push(text);
@@ -84,7 +89,7 @@ export const Plot = {
                 let graphLabel = playerName;
 
                 // Monthly or Yearly for one player
-                if (timeSpan == "by-month" || timeSpan == "by-year") {
+                if (timeSpan == "by-month" || timeSpan == "by-year" || timeSpan == "by-week") {
                     let playerData = scores.find(x => x.playerName == playerName);
 
                     // Some or all courses
@@ -96,6 +101,9 @@ export const Plot = {
                                     dateLabel = playerData.courses[c].scores[s].date.getFullYear().toString();
                                 } else if (timeSpan == "by-month") {
                                     dateLabel = (playerData.courses[c].scores[s].date.getMonth() + 1).toString() + "/" + playerData.courses[c].scores[s].date.getFullYear().toString();
+                                } else if (timeSpan == "by-week") {
+                                    let sun = this.getLastSunday(playerData.courses[c].scores[s].date);
+                                    dateLabel = (sun.getMonth() + 1).toString() + "/" + sun.getDate().toString() + "/" + sun.getFullYear().toString();
                                 }
                                 rawData.push({
                                     date: playerData.courses[c].scores[s].date,
@@ -136,6 +144,11 @@ export const Plot = {
                 labels: labels,
                 datasets: datasets
             };
+        },
+        getLastSunday: function (date) {
+            var t = new Date(date);
+            t.setDate(t.getDate() - t.getDay());
+            return t;
         }
     }
 }

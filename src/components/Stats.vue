@@ -50,7 +50,7 @@
           <div class="row">
             <div class="col-md-8">
               <h2>Select Granularity</h2>
-              <p>Would you like to aggregate scores by year or by month?</p>
+              <p>Would you like to aggregate scores by year, month, or week?</p>
               <button
                 class="btn btn-primary btn-spacing"
                 v-on:click="onSelectReportType('by-year')"
@@ -59,6 +59,10 @@
                 class="btn btn-primary btn-spacing"
                 v-on:click="onSelectReportType('by-month')"
               >By Month</button>
+              <button
+                class="btn btn-primary btn-spacing"
+                v-on:click="onSelectReportType('by-week')"
+              >By Week</button>
             </div>
             <div class="col-md-4">
               <div
