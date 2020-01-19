@@ -21,7 +21,13 @@
             <div class="col-md-8">
               <h2>Select Data</h2>
               <p>Upload your disc golf scores (in a UDisc CSV format) to generate a graph of your scores over time.</p>
-              <p class="error" v-if="error.length > 0">{{ error }}</p>
+              <div class="alert alert-danger" role="alert" v-if="error">
+                <p>Failed to load scores from CSV. Are you sure this is a valid UDisc export?</p>
+                <p>Valid UDisc exports typically look like this:</p>
+                <pre>PlayerName,CourseName,LayoutName,Date,Total,+/-,Hole1,Hole2,...
+<!--                  -->Par,Yahara Hills Winter Course,Main,2019-12-29 13:03,59,,4,3,...
+<!--                  -->Scott,Yahara Hills Winter Course,Main,2019-12-29 13:03,62,3,5,4,...</pre>
+              </div>
               <label for="fileUpload" class="btn btn-primary">
                 <span>Select a file</span>
                 <input type="file" id="fileUpload" v-on:change="onFileChange" />
@@ -30,6 +36,13 @@
               <br />
               <h4>Sample Graph</h4>
               <img :src="exampleImage" class="img-fluid img-example" />
+              <p>
+                Scott Clayton {{new Date().getFullYear()}} &bull;
+                <a
+                  href="https://github.com/skotz"
+                  target="_blank"
+                >GitHub</a>
+              </p>
             </div>
             <div class="col-md-4">
               <div class="alert alert-info" role="alert">
@@ -50,7 +63,7 @@
           <div class="row">
             <div class="col-md-8">
               <h2>Select Granularity</h2>
-              <p>Choose whether to aggregate scores by years, months, or weeks.</p>
+              <p>Choose how to aggregate your scores in the report.</p>
               <button
                 class="btn btn-primary btn-spacing"
                 v-on:click="onSelectReportType('by-year')"
@@ -68,7 +81,7 @@
               <div
                 class="alert alert-success"
                 role="alert"
-              >Loaded {{totalRounds}} rounds for {{totalPlayers}} players and {{totalCourses}} courses!</div>
+              >Loaded {{totalRounds}} rounds for {{totalPlayers}} players across {{totalCourses}} courses!</div>
               <div
                 class="alert alert-warning"
                 role="alert"
@@ -125,13 +138,6 @@
         </div>
       </div>
     </div>
-    <div class="disclaimer">
-      &copy; Scott Clayton {{new Date().getFullYear()}} &bull;
-      <a
-        href="https://github.com/skotz"
-        target="_blank"
-      >GitHub</a>
-    </div>
   </div>
 </template>
 
@@ -148,7 +154,7 @@ export default {
     return {
       scores: [],
       step: 1,
-      error: "",
+      error: false,
       reportType: "",
       playerNames: [],
       allPlayerCourses: [],
@@ -210,35 +216,42 @@ export default {
   },
   methods: {
     onFileChange: function(e) {
-      this.error = "";
+      this.error = false;
       var files = e.target.files || e.dataTransfer.files;
       var self = this;
       if (files.length) {
         var reader = new FileReader();
         reader.onload = () => {
-          var parsedScores = self.parseScores(reader.result, self.$papa.parse);
-          if (
-            parsedScores &&
-            parsedScores.players &&
-            parsedScores.players.length
-          ) {
-            self.scores = parsedScores;
-            self.step = 2;
-            self.duplicates = parsedScores.duplicates;
-            document.getElementById("fileUpload").value = "";
-            this.fireEvent(
-              "event-file-upload",
-              parsedScores.players.length +
-                " players, " +
-                parsedScores.courseCount +
-                " courses, " +
-                parsedScores.roundsCount +
-                " rounds"
+          try {
+            var parsedScores = self.parseScores(
+              reader.result,
+              self.$papa.parse
             );
-          } else {
-            self.error =
-              "Failed to load scores from CSV. Are you sure this is a valid UDisc export?";
-            this.fireEvent("event-error", "file-upload");
+            if (
+              parsedScores &&
+              parsedScores.players &&
+              parsedScores.players.length
+            ) {
+              self.scores = parsedScores;
+              self.step = 2;
+              self.duplicates = parsedScores.duplicates;
+              document.getElementById("fileUpload").value = "";
+              this.fireEvent(
+                "event-file-upload",
+                parsedScores.players.length +
+                  " players, " +
+                  parsedScores.courseCount +
+                  " courses, " +
+                  parsedScores.roundsCount +
+                  " rounds"
+              );
+            } else {
+              self.error = true;
+              this.fireEvent("event-error", "file-upload");
+            }
+          } catch (ex) {
+            self.error = true;
+            this.fireEvent("event-error", "file-upload-exception " + ex);
           }
         };
         reader.readAsText(files[0]);
@@ -345,14 +358,14 @@ export default {
 .btn-spacing {
   margin: 0 15px 15px 0;
 }
-.disclaimer {
+/*.disclaimer {
   position: fixed;
   bottom: 0;
   left: 0;
   opacity: 0.5;
   margin: 0 0 5px 10px;
   font-size: 12px;
-}
+}*/
 .btn-margin {
   margin: 8px 0 0 15px;
 }
@@ -361,5 +374,12 @@ export default {
 }
 .img-example {
   margin: 0 0 15px 0;
+}
+pre {
+  margin: 0;
+  border: 1px solid #aaa;
+  background-color: #ddd;
+  border-radius: 0.25em;
+  padding: 15px;
 }
 </style>

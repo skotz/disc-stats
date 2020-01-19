@@ -8,6 +8,7 @@ const UDiscFormat = {
     Csv_Date: 3,
     Csv_Total: 4,
     Csv_OverUnderPar: 5,
+    Csv_ValidHeader: "PlayerName,CourseName,LayoutName,Date,Total,+/-",
     ParPlayerName: "Par",
     DuplicateTimeDiff: 5
 }
@@ -23,6 +24,16 @@ export const UDisc = {
 
             // Parse score data for every player
             if (allData && allData.length) {
+                // Header row
+                if (allData[0][UDiscFormat.Csv_PlayerName].toLowerCase() + "," +
+                    allData[0][UDiscFormat.Csv_CourseName].toLowerCase() + "," +
+                    allData[0][UDiscFormat.Csv_LayoutName].toLowerCase() + "," +
+                    allData[0][UDiscFormat.Csv_Date].toLowerCase() + "," +
+                    allData[0][UDiscFormat.Csv_Total].toLowerCase() + "," +
+                    allData[0][UDiscFormat.Csv_OverUnderPar].toLowerCase() != UDiscFormat.Csv_ValidHeader.toLowerCase()) {
+                    return false;
+                }
+
                 for (let i = 1; i < allData.length; i++) {
                     var playerName = allData[i][UDiscFormat.Csv_PlayerName];
                     var courseName = allData[i][UDiscFormat.Csv_CourseName] + " - " + allData[i][UDiscFormat.Csv_LayoutName];
